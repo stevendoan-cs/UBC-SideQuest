@@ -5,7 +5,7 @@ import { ArrowLeft, Compass } from "lucide-react";
 import { CampusIllustration, type CampusIllustrationKind } from "@/components/campus-illustration";
 import goldenFrame from "@/assets/campus-golden-frame.png";
 
-export function Screen({ bg, children, publicPage = false }: { bg: string; children: ReactNode; publicPage?: boolean }) {
+export function Screen({ bg, children, publicPage = false, requireProfile = true }: { bg: string; children: ReactNode; publicPage?: boolean; requireProfile?: boolean }) {
   const content = (
     <div className="site-screen relative overflow-hidden bg-background">
       <div className="scene-art" aria-hidden="true">
@@ -18,7 +18,7 @@ export function Screen({ bg, children, publicPage = false }: { bg: string; child
       </div>
     </div>
   );
-  return publicPage ? content : <SessionGate>{content}</SessionGate>;
+  return publicPage ? content : <SessionGate requireProfile={requireProfile}>{content}</SessionGate>;
 }
 
 export function Logo({ compact = false }: { compact?: boolean }) {

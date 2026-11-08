@@ -149,11 +149,48 @@ describe('Maritime adapter (unit)', () => {
 
   it('maps HTTP errors, timeouts, bad JSON and network failures to MaritimeError', async () => {
     const make = (fetch: ConstructorParameters<typeof MaritimeClient>[0]['fetch']) =>
-      new MaritimeClient({ url: 'https://maritime.test', timeoutMs: 50, ...(fetch ? { fetch } : {}) });
+      new MaritimeClient({ url: 'https://maritime.test', timeoutMs: 50, retryDelaysMs: [], ...(fetch ? { fetch } : {}) });
     await expect(make(async () => jsonResponse({}, 503)).generateQuest(req)).rejects.toThrow(/HTTP 503/);
     await expect(make(hangingFetch).generateQuest(req)).rejects.toThrow(/timed out after 50ms/);
     await expect(make(async () => new Response('<html>oops</html>', { status: 200 })).generateQuest(req)).rejects.toThrow(/not valid JSON/);
     await expect(make(async () => { throw new TypeError('fetch failed'); }).generateQuest(req)).rejects.toThrow(/network error/);
+  });
+});
+
+describe('Maritime adapter retries (agent asleep)', () => {
+  const req = { users: [{ interests: ['music'], comfortLevel: 'chill' as const, maxBudget: 0 }], durationMinutes: 20, maxBudget: 0 };
+  const asleep = () => jsonResponse({ detail: 'Agent is starting or asleep. Try again in a moment.' }, 503);
+
+  it('retries 502/503 while the agent wakes up, then returns the quest', async () => {
+    let n = 0;
+    const fetch = fakeFetch(() => (++n <= 2 ? (n === 1 ? asleep() : jsonResponse({ detail: 'not reachable' }, 502)) : jsonResponse(AGENT_QUEST)));
+    const client = new MaritimeClient({ url: 'https://maritime.test', timeoutMs: 2_000, retryDelaysMs: [10, 10, 10], fetch });
+    await expect(client.generateQuest(req)).resolves.toMatchObject({ title: AGENT_QUEST.title, durationMinutes: 20 });
+    expect(fetch.calls).toHaveLength(3);
+  });
+
+  it('gives up after the configured retries with the last status', async () => {
+    const fetch = fakeFetch(asleep);
+    const client = new MaritimeClient({ url: 'https://maritime.test', timeoutMs: 2_000, retryDelaysMs: [5, 5], fetch });
+    await expect(client.generateQuest(req)).rejects.toThrow(/HTTP 503/);
+    expect(fetch.calls).toHaveLength(3);
+  });
+
+  it('never waits past the overall deadline', async () => {
+    const fetch = fakeFetch(asleep);
+    const client = new MaritimeClient({ url: 'https://maritime.test', timeoutMs: 60, retryDelaysMs: [5_000], fetch });
+    const started = Date.now();
+    await expect(client.generateQuest(req)).rejects.toThrow(/timed out after 60ms/);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it('does not retry other errors (e.g. 401 bad key, 500)', async () => {
+    for (const status of [401, 500]) {
+      const fetch = fakeFetch(() => jsonResponse({ detail: 'nope' }, status));
+      const client = new MaritimeClient({ url: 'https://maritime.test', timeoutMs: 2_000, retryDelaysMs: [5, 5], fetch });
+      await expect(client.generateQuest(req)).rejects.toThrow(new RegExp(`HTTP ${status}`));
+      expect(fetch.calls).toHaveLength(1);
+    }
   });
 });
 

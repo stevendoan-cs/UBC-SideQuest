@@ -4,8 +4,8 @@ import { Compass, Menu, X } from "lucide-react";
 import { Logo, PrimaryButton, Screen, pixelButton } from "@/components/app-shell";
 import bg from "@/assets/cartoon-ikb.jpg";
 import { CampusIllustration } from "@/components/campus-illustration";
-import { questPrototype } from "@/lib/quest-prototype";
-import { gameModes, useGameMode } from "@/components/game-mode-provider";
+import { useProfile } from "@/lib/api";
+import { gameModes, useGameMode, type GameMode } from "@/components/game-mode-provider";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/home")({
   component: Home,
 });
 
+const AVAILABLE_MODES: readonly GameMode[] = ["2player"];
+
 const items = [
   { to: "/chats", label: "Chats", icon: "chats" },
   { to: "/friends", label: "Friends", icon: "friends" },
@@ -31,7 +33,10 @@ const items = [
 function Home() {
   const [open, setOpen] = useState(false);
   const { activeGameMode, setActiveGameMode } = useGameMode();
-  const activeModeLabel = gameModes.find(mode => mode.value === activeGameMode)?.label;
+  const { data: profile } = useProfile();
+  // Matchmaking currently pairs two students; other modes are shown as coming soon.
+  const mode = AVAILABLE_MODES.includes(activeGameMode) ? activeGameMode : "2player";
+  const activeModeLabel = gameModes.find(m => m.value === mode)?.label;
   return (
     <Screen bg={bg}>
       <header className="flex items-center gap-4">
@@ -40,18 +45,22 @@ function Home() {
         </PrimaryButton>
         <Logo compact />
       </header>
+      {profile && <p className="title-chip mt-4 self-start text-base font-bold">Hi, {profile.displayName}!</p>}
 
       <div className="flex-1 min-h-32" />
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Game mode">
-        {gameModes.map(mode => (
-          <PrimaryButton key={mode.value} variant="mode" aria-pressed={activeGameMode === mode.value}
-            onClick={() => setActiveGameMode(mode.value)} className="game-mode-button">
-            {mode.label}
-          </PrimaryButton>
-        ))}
+        {gameModes.map(m => {
+          const available = AVAILABLE_MODES.includes(m.value);
+          return (
+            <PrimaryButton key={m.value} variant="mode" aria-pressed={mode === m.value} disabled={!available}
+              onClick={() => setActiveGameMode(m.value)} className="game-mode-button flex-col">
+              {m.label}{!available && <span className="text-xs font-semibold">Soon</span>}
+            </PrimaryButton>
+          );
+        })}
       </div>
 
-      <Link to={questPrototype.queuePath} className={`mt-8 flex-col gap-1 ${pixelButton("quest", "lg")}`}>
+      <Link to="/queue" className={`mt-8 flex-col gap-1 ${pixelButton("quest", "lg")}`}>
         <span className="flex items-center gap-3"><Compass size={26} aria-hidden="true" /> Find Quest</span>
         <span className="text-sm font-semibold" aria-live="polite">Current Mode: {activeModeLabel}</span>
       </Link>

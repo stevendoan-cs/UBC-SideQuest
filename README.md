@@ -21,3 +21,25 @@ frontend ──(Auth0 access token)──▶ backend ──▶ ai-agent   (MARIT
 ```
 
 Each folder is independent: its own dependencies, config, and `.gitignore`. Run commands from inside the folder.
+
+## Frontend ↔ backend
+
+The frontend signs users in with Auth0 (Universal Login) and calls the backend with the Auth0 access token. Public defaults live in [`frontend/src/lib/config.ts`](frontend/src/lib/config.ts): API `https://45-32-230-78.sslip.io`, Auth0 tenant, client ID and audience. Override any of them with `VITE_API_URL`, `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` or `VITE_AUTH0_AUDIENCE`.
+
+The Auth0 application (Single Page Application) must allow each frontend URL:
+
+- **Allowed Callback URLs:** `<frontend-url>/callback`, e.g. `http://localhost:8080/callback`
+- **Allowed Logout URLs** and **Allowed Web Origins:** `<frontend-url>`, e.g. `http://localhost:8080`
+
+The backend's `CORS_ORIGINS` must include the same frontend URLs.
+
+**Local full-stack testing without Auth0:**
+
+```sh
+# terminal 1: backend in dev-auth mode
+cd backend && AUTH_MODE=dev NODE_ENV=development npm run dev
+# terminal 2: frontend pointing at it
+cd frontend && VITE_AUTH_MODE=dev VITE_API_URL=http://localhost:3000 npx vite dev --port 8080
+```
+
+Sign in with any test name (e.g. `alice` in one browser and `bob` in a private window) to try matching. Dev mode is ignored in production builds.

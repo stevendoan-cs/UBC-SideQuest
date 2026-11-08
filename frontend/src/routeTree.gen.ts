@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as QuestRouteImport } from './routes/quest'
 import { Route as QueueRouteImport } from './routes/queue'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as VerifyRouteImport } from './routes/verify'
@@ -29,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallbackRoute = CallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatsRoute = ChatsRouteImport.update({
@@ -61,6 +68,11 @@ const QueueRoute = QueueRouteImport.update({
   path: '/queue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -80,12 +92,14 @@ const VerifyRoute = VerifyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/callback': typeof CallbackRoute
   '/chats': typeof ChatsRoute
   '/friends': typeof FriendsRoute
   '/home': typeof HomeRoute
   '/map': typeof MapRoute
   '/quest': typeof QuestRoute
   '/queue': typeof QueueRoute
+  '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/stats': typeof StatsRoute
   '/verify': typeof VerifyRoute
@@ -93,12 +107,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/callback': typeof CallbackRoute
   '/chats': typeof ChatsRoute
   '/friends': typeof FriendsRoute
   '/home': typeof HomeRoute
   '/map': typeof MapRoute
   '/quest': typeof QuestRoute
   '/queue': typeof QueueRoute
+  '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/stats': typeof StatsRoute
   '/verify': typeof VerifyRoute
@@ -107,12 +123,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/callback': typeof CallbackRoute
   '/chats': typeof ChatsRoute
   '/friends': typeof FriendsRoute
   '/home': typeof HomeRoute
   '/map': typeof MapRoute
   '/quest': typeof QuestRoute
   '/queue': typeof QueueRoute
+  '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/stats': typeof StatsRoute
   '/verify': typeof VerifyRoute
@@ -122,12 +140,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/callback'
     | '/chats'
     | '/friends'
     | '/home'
     | '/map'
     | '/quest'
     | '/queue'
+    | '/setup'
     | '/signup'
     | '/stats'
     | '/verify'
@@ -135,12 +155,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/callback'
     | '/chats'
     | '/friends'
     | '/home'
     | '/map'
     | '/quest'
     | '/queue'
+    | '/setup'
     | '/signup'
     | '/stats'
     | '/verify'
@@ -148,12 +170,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
+    | '/callback'
     | '/chats'
     | '/friends'
     | '/home'
     | '/map'
     | '/quest'
     | '/queue'
+    | '/setup'
     | '/signup'
     | '/stats'
     | '/verify'
@@ -162,12 +186,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  CallbackRoute: typeof CallbackRoute
   ChatsRoute: typeof ChatsRoute
   FriendsRoute: typeof FriendsRoute
   HomeRoute: typeof HomeRoute
   MapRoute: typeof MapRoute
   QuestRoute: typeof QuestRoute
   QueueRoute: typeof QueueRoute
+  SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
   StatsRoute: typeof StatsRoute
   VerifyRoute: typeof VerifyRoute
@@ -187,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/callback': {
+      id: '/callback'
+      path: '/callback'
+      fullPath: '/callback'
+      preLoaderRoute: typeof CallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chats': {
@@ -231,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QueueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -258,12 +298,14 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  CallbackRoute: CallbackRoute,
   ChatsRoute: ChatsRoute,
   FriendsRoute: FriendsRoute,
   HomeRoute: HomeRoute,
   MapRoute: MapRoute,
   QuestRoute: QuestRoute,
   QueueRoute: QueueRoute,
+  SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
   StatsRoute: StatsRoute,
   VerifyRoute: VerifyRoute,

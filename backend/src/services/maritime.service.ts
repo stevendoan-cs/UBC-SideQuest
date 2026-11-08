@@ -101,6 +101,27 @@ export interface MaritimeClientOptions {
   apiKey?: string | undefined;
   timeoutMs: number;
   fetch?: FetchLike;
+  /** Waits before each retry of a 502/503 ("agent is starting or asleep"). Bounded by `timeoutMs`. */
+  retryDelaysMs?: readonly number[];
+}
+
+const RETRYABLE_STATUS = new Set([502, 503]);
+const DEFAULT_RETRY_DELAYS_MS = [1_000, 2_000, 4_000] as const;
+
+/** Resolves after `ms`, or rejects as soon as `signal` aborts. */
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(signal.reason);
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 export class MaritimeClient implements QuestGenerator {
@@ -114,26 +135,30 @@ export class MaritimeClient implements QuestGenerator {
     const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json' };
     // Server-side only: the key never leaves the backend.
     if (this.opts.apiKey) headers['x-api-key'] = this.opts.apiKey;
+    const payload = JSON.stringify(toMaritimeRequest(request));
 
-    let response: Response;
-    let body: unknown;
-    // One deadline covers connecting, headers and reading the body.
+    // One deadline covers every attempt: connecting, headers, reading the body and waiting between retries.
     const signal = AbortSignal.timeout(this.opts.timeoutMs);
-    try {
-      response = await this.fetchImpl(this.opts.url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(toMaritimeRequest(request)),
-        signal,
-      });
-      if (!response.ok) throw new MaritimeError(`agent responded with HTTP ${response.status}`);
-      body = await response.json();
-    } catch (err) {
-      if (err instanceof MaritimeError) throw err;
-      if (signal.aborted) throw new MaritimeError(`agent timed out after ${this.opts.timeoutMs}ms`);
-      if (err instanceof SyntaxError) throw new MaritimeError('agent response was not valid JSON');
-      throw new MaritimeError(`network error calling agent (${err instanceof Error ? err.name : 'unknown'})`);
+    const retryDelays = this.opts.retryDelaysMs ?? DEFAULT_RETRY_DELAYS_MS;
+    for (let attempt = 0; ; attempt++) {
+      let response: Response;
+      try {
+        response = await this.fetchImpl(this.opts.url, { method: 'POST', headers, body: payload, signal });
+        // Maritime answers 502/503 while a sleeping agent wakes up: wait and try again.
+        const delay = retryDelays[attempt];
+        if (RETRYABLE_STATUS.has(response.status) && delay !== undefined) {
+          await response.body?.cancel().catch(() => undefined);
+          await sleep(delay, signal);
+          continue;
+        }
+        if (!response.ok) throw new MaritimeError(`agent responded with HTTP ${response.status}`);
+        return fromMaritimeResponse(await response.json());
+      } catch (err) {
+        if (err instanceof MaritimeError) throw err;
+        if (signal.aborted) throw new MaritimeError(`agent timed out after ${this.opts.timeoutMs}ms`);
+        if (err instanceof SyntaxError) throw new MaritimeError('agent response was not valid JSON');
+        throw new MaritimeError(`network error calling agent (${err instanceof Error ? err.name : 'unknown'})`);
+      }
     }
-    return fromMaritimeResponse(body);
   }
 }

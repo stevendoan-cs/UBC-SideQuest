@@ -8,11 +8,12 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameModeProvider } from "@/components/game-mode-provider";
+import { AuthProvider } from "@/lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -123,11 +124,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Drop cached profile/quest data on sign-out so the next user never sees it.
+  const clearCache = useCallback(() => queryClient.clear(), [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <GameModeProvider><Outlet /></GameModeProvider>
+      <AuthProvider onSignedOut={clearCache}>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <GameModeProvider><Outlet /></GameModeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

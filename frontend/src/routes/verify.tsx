@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Camera, CheckCircle2 } from "lucide-react";
 import { Panel, PrimaryButton, Screen } from "@/components/app-shell";
 import bg from "@/assets/cartoon-forestry.jpg";
-import { markVerified } from "@/lib/auth";
 
 export const Route = createFileRoute("/verify")({
   head: () => ({
@@ -25,29 +24,29 @@ function Verify() {
   const [done, setDone] = useState(false);
 
   function submit() {
-    markVerified();
     setDone(true);
-    setTimeout(() => navigate({ to: "/home" }), 1400);
+    setTimeout(() => navigate({ to: "/setup" }), 1400);
   }
 
   if (done)
     return (
-      <Screen bg={bg}>
+      <Screen bg={bg} requireProfile={false}>
         <div className="flex flex-1 items-center"><Panel className="w-full flex flex-col items-center text-center animate-in zoom-in-95">
           <CheckCircle2 className="h-20 w-20 text-brand" />
           <h1 className="mt-4 text-xl text-brand">Submitted!</h1>
-          <p className="mt-3 text-lg">Your school ID was sent for verification.</p>
+          <p className="mt-3 text-lg">Thanks! Next, tell us what you're into.</p>
         </Panel></div>
       </Screen>
     );
 
   return (
-    <Screen bg={bg}>
+    <Screen bg={bg} requireProfile={false}>
       <Panel className="mt-6">
       <h1 className="text-xl text-brand">Verify Your Student Status</h1>
       <p className="mt-3 text-lg">
         Upload a photo of your school ID so we can confirm you're a student.
       </p>
+      <p className="mt-2 text-sm font-semibold">Prototype: the photo stays on your device and is not uploaded.</p>
       </Panel>
       <label className="mt-8 flex aspect-[1.6] cursor-pointer flex-col items-center justify-center overflow-hidden pixel-panel">
         {preview ? (
