@@ -9,6 +9,8 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Auth0Provider } from "@auth0/auth0-react";
+import { ClientOnly } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -125,8 +127,18 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ClientOnly fallback={<div>Loading SideQuest...</div>}>
+        <Auth0Provider
+          domain={import.meta.env["VITE_AUTH0_DOMAIN"]}
+          clientId={import.meta.env["VITE_AUTH0_CLIENT_ID"]}
+          authorizationParams={{
+            redirect_uri: window.location.origin,
+            audience: import.meta.env["VITE_AUTH0_AUDIENCE"],
+          }}
+        >
+          <Outlet />
+        </Auth0Provider>
+      </ClientOnly>
     </QueryClientProvider>
   );
 }
