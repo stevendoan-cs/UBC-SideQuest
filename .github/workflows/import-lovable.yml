@@ -1,0 +1,22 @@
+name: Import Lovable frontend
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and unpack frontend
+        run: |
+          curl -fL "https://id-preview--a4b1d47c-c243-436b-8352-016186093fde.lovable.app/__l5e/assets-v1/18afa644-67a9-47a5-b718-28d3abc97f17/ubc-sidequest-frontend.zip" -o /tmp/frontend.zip
+          rm -rf frontend
+          unzip -q /tmp/frontend.zip -d .
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Import latest UBC SideQuest frontend from Lovable"
+          git push
